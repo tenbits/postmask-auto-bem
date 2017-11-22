@@ -1,0 +1,47 @@
+import * as postmask from 'postmask';
+import '../lib/index.js'
+
+UTest({	
+	'should transform bem' () {
+		let template = `
+			import 'panel.css' as bem;
+
+			[bem]
+			div > span .red;
+		`;
+		let files = {
+			'panel.css': `
+				.red { color: red }
+				.blue { color: blue }
+			`
+		}
+		postmask.configurate({
+			io: {
+				File: function (path) {
+					for (var key in files) {
+						if (path.indexOf(key) === path.length - key.length) {
+							this.content = files[key];
+						}
+					}					
+					this.exists = function(){
+						return this.content != null;
+					};
+					this.read = function () {
+						return this.content;
+					}
+				}
+			}
+		});
+		
+		let file = new io.File('panel.css');
+		file.content = 'span { color: red; }'
+		file.exists = () => true;
+		console.log(file.uri.toString());
+		return postmask
+			.optimizeAsync(template, '', { plugins: [ './lib/index.js' ] })
+			.then((out) => {
+				deepEq_(out.report.errors, []);
+				console.log('DONE', out);
+			});
+	}
+});
