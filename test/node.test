@@ -1,6 +1,32 @@
 import * as postmask from 'postmask';
 import '../lib/index.js'
 
+
+namespace Files {
+	let files = null;
+	export function get(path) {
+		return files.find(x => x.uri.toLocalFile().includes(path));
+	}
+	export function inject (map: {[path: string]: string}, options = {}) {
+		files = Object.keys(map).map(path => {
+			let file = new io.File(path);
+			file.content = map[path];
+			file.exists = () => true;
+			file.read = () => file.content;
+			return file;
+		});
+		postmask.configurate({
+			io: {
+				File: function (path) {
+					let file = new io.File(path);
+					return get(file.uri.toLocalFile());
+				}
+			},
+			'postmask-auto-bem': options
+		});
+	}
+}
+
 UTest({	
 	'should transform bem' () {
 		let template = `
@@ -9,39 +35,66 @@ UTest({
 			[bem]
 			div > span .red;
 		`;
-		let files = {
+		Files.inject({
 			'panel.css': `
 				.red { color: red }
 				.blue { color: blue }
 			`
-		}
-		postmask.configurate({
-			io: {
-				File: function (path) {
-					for (var key in files) {
-						if (path.indexOf(key) === path.length - key.length) {
-							this.content = files[key];
-						}
-					}					
-					this.exists = function(){
-						return this.content != null;
-					};
-					this.read = function () {
-						return this.content;
-					}
-				}
-			}
-		});
-		
-		let file = new io.File('panel.css');
-		file.content = 'span { color: red; }'
-		file.exists = () => true;
-		console.log(file.uri.toString());
+		});		
 		return postmask
 			.optimizeAsync(template, '', { plugins: [ './lib/index.js' ] })
 			.then((out) => {
+
+				'> No Errors'
 				deepEq_(out.report.errors, []);
-				console.log('DONE', out);
+
+				'> Added new class: $blockName_$salt__$origKlass'
+				let template = out.result;
+				has_(out.result, /span.panel_.{2,6}__red.red/);
+
+				'> Transformed CSS File content'
+				let file = Files.get('panel.css');
+				has_(file.content, /.panel_.{2,6}__red/);
+				has_(file.content, /.panel_.{2,6}__blue/);
+			});
+	},
+	'should transform bem with plugin option (NO SALT) and named module' () {
+		let template = `
+			import * as white from 'white.css' as bem;
+			import 'black.css' as bem;
+
+			[ bem('white') ]
+			div > span .line;
+		`;
+		Files.inject({
+			'white.css': `
+				.line { color: white }
+			`,
+			'black.css': `
+				.line { color: black }
+			`
+		}, {
+			useSalt: false,
+			type: 'host'
+		});		
+		return postmask
+			.optimizeAsync(template, '', { plugins: [ './lib/index.js' ] })
+			.then((out) => {
+
+				'> No Errors'
+				deepEq_(out.report.errors, []);
+
+				'> Added new class: $blockName__$origKlass'
+				let template = out.result;
+				has_(out.result, /span.white__line.line/);
+				
+				'> Transformed White CSS File content'
+				let whiteFile = Files.get('white.css');
+				has_(whiteFile.content, /.white__line/);
+				
+				'> Transformed Black CSS File content'
+				let blackFile = Files.get('black.css');
+				has_(blackFile.content, /.black__line/);
 			});
 	}
 });

@@ -1,8 +1,8 @@
 {
-  "name": "auto-bem-postmask",
-  "version": "1.0.0",
+  "name": "postmask-auto-bem",
+  "version": "1.0.1",
   "description": "AutoBem for postmask",
-  "main": "index.js",
+  "main": "lib/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tenbits/auto-bem-postmask.git"
@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/tenbits/auto-bem-postmask#readme",
   "dependencies": {
-    "auto-bem": "^0.1.13"
+    "auto-bem": "^0.1.15"    
   },
   "devDependencies": {
     "app-bundler": "0.0.38",
@@ -27,10 +27,9 @@
     "postmask": "^1.1.5"
   },
   "scripts": {
-    "build": "app-bundler && npm run build-types",
+    "build": "app-bundler",
     "watch": "app-bundler -watch",
-    "test": "atma test",
-    "build-types": "tsc -p . & atma custom tools/build-dts"
+    "test": "atma test"
   },
   "app-bundler": {
     "file": "src/index.ts",

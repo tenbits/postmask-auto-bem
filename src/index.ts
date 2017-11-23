@@ -2,6 +2,8 @@ import * as AutoBem from "auto-bem"
 
 let _mask = null;
 let _io = null;
+let _settings = null;
+const PLUGIN_NAME = 'postmask-auto-bem';
 
 export function initialize (optimizer, settings, mask, io) {
     _mask = mask;
@@ -17,16 +19,18 @@ export function configurate (config) {
     }
     _mask = config.mask || _mask;
     _io = config.io || _io;
+    _settings = config[PLUGIN_NAME] || {};
 }
 
 
 function optimize (root, ctx, next) {
     let bemImports = [],
-        bemDecos = [],
-        convertedImports = [];
+        bemDecos = [];
 
     _mask.TreeWalker.walk(root, function(node){
         if (Ast.isBemImport(node)) {
+            let path = Ast.getFilePathForImport(node, ctx.filename);
+            let file = AutoBemUtil.createFile(path, node);
             bemImports.push(node);
             return;
         }
@@ -58,10 +62,8 @@ function optimize (root, ctx, next) {
                 let element = Ast.getElementForDeco(node);
                 
                 file.bemCss.transformAst(element);
-                convertedImports.push(import_);
             }
-            catch (error) {
-                console.error(error);
+            catch (error) {                
                 ctx.error(error.message, node);
                 return;
             }
@@ -69,7 +71,9 @@ function optimize (root, ctx, next) {
             return { remove: true }
         }
     });
-    convertedImports.forEach(x => x.moduleType = null);
+    bemImports.forEach(x => x.moduleType = null);
+
+    
     next();
 }
 namespace Ast {
@@ -134,7 +138,8 @@ namespace AutoBemUtil {
         let style = file.read();
         let bemCss = new AutoBem.BemCss(style, {
             filename: path,
-            salt: maskImport.attr && maskImport.attr.salt
+            salt: maskImport.attr && maskImport.attr.salt,
+            ..._settings
         });
         file.bemCss = bemCss;
         file.content = bemCss.getStyle();
