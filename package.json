@@ -19,10 +19,11 @@
   },
   "homepage": "https://github.com/tenbits/auto-bem-postmask#readme",
   "dependencies": {
-    "auto-bem": "^0.1.15"    
+    "auto-bem": "^0.1.15"
   },
   "devDependencies": {
     "app-bundler": "0.0.38",
+    "atma": "^0.10.89",
     "atma-loader-ts": "^1.0.0",
     "postmask": "^1.1.5"
   },
@@ -61,7 +62,7 @@
         "extentionDefault": {
           "js": "ts"
         }
-      },     
+      },
       "atma-loader-ts": {
         "extensions": [
           "ts",
