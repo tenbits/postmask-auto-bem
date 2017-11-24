@@ -29,7 +29,8 @@
   "scripts": {
     "build": "app-bundler",
     "watch": "app-bundler -watch",
-    "test": "atma test"
+    "test": "atma test",
+    "server": "atma server"
   },
   "app-bundler": {
     "file": "src/index.ts",
@@ -60,7 +61,7 @@
         "extentionDefault": {
           "js": "ts"
         }
-      },
+      },     
       "atma-loader-ts": {
         "extensions": [
           "ts",
